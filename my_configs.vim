@@ -33,3 +33,31 @@ endfunction
 vnoremap <space>y "+y
 nnoremap <space>P "0p
 vnoremap <space>P "0p
+
+
+let g:ctrlp_max_files = 0
+let g:ctrlp_cache_dir = $HOME . '/.cache/ctrlp'
+"if executable('ag')
+" let g:ctrlp_user_command = 'ag %s -l --nocolor -g ""'
+"endif
+let g:ctrlp_user_command = ['.git/', 'git --git-dir=%s/.git ls-files -oc --exclude-standard']
+
+"--------------------------------------------------------------------------------
+function! TabCloseRight(bang)
+    let cur=tabpagenr()
+    while cur < tabpagenr('$')
+        exe 'tabclose' . a:bang . ' ' . (cur + 1)
+    endwhile
+endfunction
+
+function! TabCloseLeft(bang)
+    while tabpagenr() > 1
+        exe 'tabclose' . a:bang . ' 1'
+    endwhile
+endfunction
+
+command! -bang Tabcloseright call TabCloseRight('<bang>')
+command! -bang Tabcloseleft call TabCloseLeft('<bang>')
+
+map <leader>tcl :Tabcloseleft<cr>
+map <leader>tcr :Tabcloseright<cr>

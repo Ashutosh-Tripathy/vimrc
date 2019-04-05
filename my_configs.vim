@@ -4,7 +4,8 @@ let NERDTreeQuitOnOpen=1
 autocmd FileType nerdtree setlocal relativenumber
 syntax enable 
 let g:solarized_termcolors=256
-colorscheme solarized
+"colorscheme solarized
+colorscheme desert
 set number
 map <leader>wo :only<cr>
 let g:ctrlp_prompt_mappings = {
@@ -37,10 +38,15 @@ vnoremap <space>P "0p
 
 let g:ctrlp_max_files = 0
 let g:ctrlp_cache_dir = $HOME . '/.cache/ctrlp'
+"let g:ctrlp_custom_ignore = '\v[\/](node_modules|target|dist)|(\.(swp|ico|git|svn))$'
+
 "if executable('ag')
-" let g:ctrlp_user_command = 'ag %s -l --nocolor -g ""'
+"    let g:ctrlp_user_command = 'ag %s -l --nocolor -g ""'
 "endif
-let g:ctrlp_user_command = ['.git/', 'git --git-dir=%s/.git ls-files -oc --exclude-standard']
+
+"if isdirectory(".git")
+"    let g:ctrlp_user_command = ['.git/', 'git --git-dir=%s/.git ls-files -oc --exclude-standard']
+"endif
 
 "--------------------------------------------------------------------------------
 function! TabCloseRight(bang)
@@ -61,3 +67,9 @@ command! -bang Tabcloseleft call TabCloseLeft('<bang>')
 
 map <leader>tcl :Tabcloseleft<cr>
 map <leader>tcr :Tabcloseright<cr>
+
+"git clone --depth 1 https://github.com/junegunn/fzf.git ~/.vim_runtime/my_plugins/fzf
+"git clone --depth 1 https://github.com/junegunn/fzf.git ~/.vim_runtime/my_plugins/fzf.vim
+"nnoremap <leader>f :GFiles<CR>
+"nnoremap <leader>F :Files<CR>
+"nmap <Leader>l :Lines<CR>

@@ -8,6 +8,7 @@ let g:solarized_termcolors=256
 colorscheme desert
 set number
 map <leader>wo :only<cr>
+map <leader>bo :w \| %bd \| e#<cr>
 map <leader>ca :colorscheme peaksea<cr>
 
 vnoremap <space>y "+y
@@ -78,7 +79,7 @@ nmap <Leader>t :Tags<CR>
 " => Nerd Tree
 """"""""""""""""""""""""""""""
 let g:NERDTreeWinPos = "left"
-let NERDTreeQuitOnOpen=1
+"let NERDTreeQuitOnOpen=1
 autocmd FileType nerdtree setlocal relativenumber
 
 

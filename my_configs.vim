@@ -2,6 +2,7 @@
 " => VIM related
 """"""""""""""""""""""""""""""
 set relativenumber
+set paste
 syntax enable 
 let g:solarized_termcolors=256
 "colorscheme solarized
@@ -10,6 +11,7 @@ set number
 map <leader>wo :only<cr>
 map <leader>bo :w \| %bd \| e#<cr>
 map <leader>ca :colorscheme peaksea<cr>
+nnoremap <c-a> ggVG
 
 vnoremap <space>y "+y
 nnoremap <space>P "0p

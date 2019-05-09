@@ -3,6 +3,7 @@
 """"""""""""""""""""""""""""""
 set relativenumber
 set paste
+setlocal paste
 syntax enable 
 let g:solarized_termcolors=256
 "colorscheme solarized
@@ -11,7 +12,7 @@ set number
 map <leader>wo :only<cr>
 map <leader>bo :w \| %bd \| e#<cr>
 map <leader>ca :colorscheme peaksea<cr>
-nnoremap <c-a> ggVG
+"nnoremap <c-a> ggVG
 
 vnoremap <space>y "+y
 nnoremap <space>P "0p
@@ -65,6 +66,15 @@ let g:ctrlp_max_files = 0
 let g:ctrlp_cache_dir = $HOME . '/.cache/ctrlp'
 nnoremap <Leader>b :CtrlPBuffer<cr>
 
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Syntastic (syntax checker)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:ale_linters = {
+\   'javascript': ['eslint'],
+\   'python': ['flake8'],
+\   'go': ['go', 'golint', 'errcheck']
+\}
 
 """"""""""""""""""""""""""""""
 " => FZF

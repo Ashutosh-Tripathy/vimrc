@@ -156,11 +156,11 @@ let g:go_fmt_command = "goimports"
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Syntastic (syntax checker)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:ale_linters = {
-\   'javascript': ['jshint'],
-\   'python': ['flake8'],
-\   'go': ['go', 'golint', 'errcheck']
-\}
+"let g:ale_linters = {
+"\   'javascript': ['jshint'],
+"\   'python': ['flake8'],
+"\   'go': ['go', 'golint', 'errcheck']
+"\}
 
 nmap <silent> <leader>a <Plug>(ale_next_wrap)
 

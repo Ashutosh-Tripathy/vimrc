@@ -7,7 +7,8 @@ setlocal paste
 syntax enable 
 let g:solarized_termcolors=256
 "colorscheme solarized
-colorscheme desert
+colorscheme gruvbox
+set ff=unix
 set number
 map <leader>wo :only<cr>
 map <leader>bo :w \| %bd \| e#<cr>
@@ -34,9 +35,11 @@ endfunction
 
 command! -bang Tabcloseright call TabCloseRight('<bang>')
 command! -bang Tabcloseleft call TabCloseLeft('<bang>')
+command! DeleteEmptyBuffers call DeleteEmptyBuffers()
 
 map <leader>tcl :Tabcloseleft<cr>
 map <leader>tcr :Tabcloseright<cr>
+map <leader>bde :DeleteEmptyBuffers<cr>
  
 " Tabe *.py *.txt
 command! -complete=file -nargs=* Tabe call Tabe(<f-args>)
@@ -52,6 +55,19 @@ function! Tabe(...)
   if i
     exe "tabn " . (t + 1)
   endif
+endfunction
+
+function! DeleteEmptyBuffers()
+    let [i, n; empty] = [1, bufnr('$')]
+    while i <= n
+        if bufexists(i) && bufname(i) == ''
+            call add(empty, i)
+        endif
+        let i += 1
+    endwhile
+    if len(empty) > 0
+        exe 'bdelete' join(empty)
+    endif
 endfunction
 
 

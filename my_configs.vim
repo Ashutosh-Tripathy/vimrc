@@ -41,6 +41,21 @@ map <leader>tcl :Tabcloseleft<cr>
 map <leader>tcr :Tabcloseright<cr>
 map <leader>bde :DeleteEmptyBuffers<cr>
  
+
+
+noremap <leader>1 1gt
+noremap <leader>2 2gt
+noremap <leader>3 3gt
+noremap <leader>4 4gt
+noremap <leader>5 5gt
+noremap <leader>6 6gt
+noremap <leader>7 7gt
+noremap <leader>8 8gt
+noremap <leader>9 9gt
+noremap <leader>0 :tablast<cr>
+
+
+
 " Tabe *.py *.txt
 command! -complete=file -nargs=* Tabe call Tabe(<f-args>)
 function! Tabe(...)
@@ -98,8 +113,8 @@ let g:ale_linters = {
 set rtp+=~/.vim_runtime/my_plugins/fzf
 nnoremap <leader>j :GFiles<CR>
 nnoremap <leader>J :Files<CR>
-nmap <Leader>l :Lines<CR>
-"nmap <Leader>b  :Buffers<CR>
+nmap <Leader>L :Lines<CR>
+nmap <Leader>b  :Buffers<CR>
 nmap <Leader>t :Tags<CR>
 
 

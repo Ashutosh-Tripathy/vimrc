@@ -8,14 +8,15 @@ syntax enable
 let g:solarized_termcolors=256
 "colorscheme solarized
 colorscheme gruvbox
-set ff=unix
+set fileformat=unix
+set fileformats=unix,dos
 set number
 map <leader>wo :only<cr>
 map <leader>bo :w \| %bd \| e#<cr>
 map <leader>ca :colorscheme peaksea<cr>
 "nnoremap <c-a> ggVG
 
-vnoremap <space>y "+y
+vnoremap <space>y "*y
 nnoremap <space>P "0p
 vnoremap <space>P "0p
 nnoremap vv <c-v>
@@ -54,7 +55,11 @@ noremap <leader>8 8gt
 noremap <leader>9 9gt
 noremap <leader>0 :tablast<cr>
 
-
+:tnoremap <Esc> <C-\><C-n>
+:tnoremap <expr> <C-R> '<C-\><C-N>"'.nr2char(getchar()).'pi'"'
+set foldnestmax=10 
+set nofoldenable 
+set foldlevel=2
 
 " Tabe *.py *.txt
 command! -complete=file -nargs=* Tabe call Tabe(<f-args>)
@@ -106,6 +111,8 @@ let g:ale_linters = {
 \   'python': ['flake8'],
 \   'go': ['go', 'golint', 'errcheck']
 \}
+let g:ale_javascript_prettier_eslint_use_global = 1
+let g:ale_javascript_eslint_use_global = 1
 
 """"""""""""""""""""""""""""""
 " => FZF
@@ -121,6 +128,7 @@ nmap <Leader>t :Tags<CR>
 """"""""""""""""""""""""""""""
 " => Nerd Tree
 """"""""""""""""""""""""""""""
+let g:NERDTreeChDirMode=2
 let g:NERDTreeWinPos = "left"
 "let NERDTreeQuitOnOpen=1
 autocmd FileType nerdtree setlocal relativenumber

@@ -2,8 +2,6 @@
 " => VIM related
 """"""""""""""""""""""""""""""
 set relativenumber
-set paste
-setlocal paste
 syntax enable 
 let g:solarized_termcolors=256
 "colorscheme solarized
@@ -16,6 +14,8 @@ map <leader>bo :w \| %bd \| e#<cr>
 map <leader>ca :colorscheme peaksea<cr>
 "nnoremap <c-a> ggVG
 
+set wildignore+=**/node_modules/**
+set foldmethod=manual
 vnoremap <space>y "*y
 nnoremap <space>P "0p
 vnoremap <space>P "0p
@@ -41,7 +41,6 @@ command! DeleteEmptyBuffers call DeleteEmptyBuffers()
 map <leader>tcl :Tabcloseleft<cr>
 map <leader>tcr :Tabcloseright<cr>
 map <leader>bde :DeleteEmptyBuffers<cr>
- 
 
 
 noremap <leader>1 1gt
@@ -151,3 +150,5 @@ autocmd FileType nerdtree setlocal relativenumber
 "git clone --depth 1 https://github.com/junegunn/fzf.git ~/.vim_runtime/my_plugins/fzf
 "git clone --depth 1 https://github.com/junegunn/fzf.git ~/.vim_runtime/my_plugins/fzf.vim
 
+filetype plugin on
+autocmd FileType python setlocal expandtab shiftwidth=4 softtabstop=4

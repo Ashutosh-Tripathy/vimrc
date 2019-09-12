@@ -107,6 +107,7 @@ nnoremap <Leader>b :CtrlPBuffer<cr>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:ale_linters = {
 \   'javascript': ['eslint'],
+\   'typescript': ['tsserver', 'eslint', 'typecheck'],
 \   'python': ['flake8'],
 \   'go': ['go', 'golint', 'errcheck']
 \}
@@ -152,3 +153,8 @@ autocmd FileType nerdtree setlocal relativenumber
 
 filetype plugin on
 autocmd FileType python setlocal expandtab shiftwidth=4 softtabstop=4
+
+"set backup
+"set wb
+"set swapfile
+let g:deoplete#enable_at_startup = 1

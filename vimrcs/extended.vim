@@ -139,8 +139,9 @@ vnoremap <silent> <leader>r :call VisualSelection('replace', '')<CR>
 "
 map <leader>cc :botright cope<cr>
 map <leader>co ggVGy:tabnew<cr>:set syntax=qf<cr>pgg
-map <leader>n :cn<cr>
-map <leader>p :cp<cr>
+"map <leader>n :cn<cr>
+"map <leader>p :cp<cr>
+
 
 
 
@@ -170,3 +171,6 @@ endfunc
 func! CurrentFileDir(cmd)
     return a:cmd . " " . expand("%:p:h") . "/"
 endfunc
+
+nmap <leader>n :cn<cr>
+nmap <leader>p :cp<cr>

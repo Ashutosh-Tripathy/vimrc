@@ -383,7 +383,7 @@ endif
 
 
 
-"augroup autoformat_settings
+augroup autoformat_settings
 "  autocmd FileType bzl AutoFormatBuffer buildifier
 "  autocmd FileType c,cpp,proto,javascript AutoFormatBuffer clang-format
 "  autocmd FileType dart AutoFormatBuffer dartfmt
@@ -393,5 +393,6 @@ endif
 "  autocmd FileType java AutoFormatBuffer google-java-format
 "  autocmd FileType python AutoFormatBuffer yapf
 "  " Alternative: autocmd FileType python AutoFormatBuffer autopep8
-"  autocmd FileType vue AutoFormatBuffer prettier
-"augroup END
+    autocmd FileType rust AutoFormatBuffer rustfmt
+    "autocmd FileType vue AutoFormatBuffer prettier
+augroup END

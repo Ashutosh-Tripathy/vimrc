@@ -88,6 +88,9 @@ function! fzf#vim#with_preview(...)
     call remove(args, 0)
   endif
 
+  " Placeholder expression (TODO/TBD: undocumented)
+  let placeholder = get(options, 'placeholder', '{}')
+
   " Preview window
   if len(args) && type(args[0]) == s:TYPE.string
     if args[0] !~# '^\(up\|down\|left\|right\)'
@@ -97,7 +100,7 @@ function! fzf#vim#with_preview(...)
     call remove(args, 0)
   endif
 
-  let preview = ['--preview-window', window, '--preview', (s:is_win ? s:bin.preview : fzf#shellescape(s:bin.preview)).' {}']
+  let preview = ['--preview-window', window, '--preview', (s:is_win ? s:bin.preview : fzf#shellescape(s:bin.preview)).' '.placeholder]
 
   if len(args)
     call extend(preview, ['--bind', join(map(args, 'v:val.":toggle-preview"'), ',')])
@@ -112,6 +115,14 @@ function! s:remove_layout(opts)
       call remove(a:opts, key)
     endif
   endfor
+  return a:opts
+endfunction
+
+function! s:reverse_list(opts)
+  let tokens = map(split($FZF_DEFAULT_OPTS, '[^a-z-]'), 'substitute(v:val, "^--", "", "")')
+  if index(tokens, 'reverse') < 0
+    return extend(['--layout=reverse-list'], a:opts)
+  endif
   return a:opts
 endfunction
 
@@ -377,7 +388,7 @@ function! fzf#vim#lines(...)
   return s:fzf('lines', {
   \ 'source':  lines,
   \ 'sink*':   s:function('s:line_handler'),
-  \ 'options': ['+m', '--tiebreak=index', '--prompt', 'Lines> ', '--ansi', '--extended', '--nth='.nth.'..', '--layout=reverse-list', '--tabstop=1', '--query', query]
+  \ 'options': s:reverse_list(['+m', '--tiebreak=index', '--prompt', 'Lines> ', '--ansi', '--extended', '--nth='.nth.'..', '--tabstop=1', '--query', query])
   \}, args)
 endfunction
 
@@ -422,7 +433,7 @@ function! fzf#vim#buffer_lines(...)
   return s:fzf('blines', {
   \ 'source':  s:buffer_lines(query),
   \ 'sink*':   s:function('s:buffer_line_handler'),
-  \ 'options': ['+m', '--tiebreak=index', '--multi', '--prompt', 'BLines> ', '--ansi', '--extended', '--nth=2..', '--layout=reverse-list', '--tabstop=1']
+  \ 'options': s:reverse_list(['+m', '--tiebreak=index', '--multi', '--prompt', 'BLines> ', '--ansi', '--extended', '--nth=2..', '--tabstop=1'])
   \}, args)
 endfunction
 
@@ -485,7 +496,7 @@ function! s:history_sink(type, lines)
   if key == 'ctrl-e'
     call histadd(a:type, item)
     redraw
-    call feedkeys(a:type."\<up>")
+    call feedkeys(a:type."\<up>", 'n')
   else
     if a:type == ':'
       call histadd(a:type, item)
@@ -608,13 +619,15 @@ endfunction
 
 function! s:format_buffer(b)
   let name = bufname(a:b)
+  let line = getbufinfo(a:b)[0]['lnum']
   let name = empty(name) ? '[No Name]' : fnamemodify(name, ":p:~:.")
   let flag = a:b == bufnr('')  ? s:blue('%', 'Conditional') :
           \ (a:b == bufnr('#') ? s:magenta('#', 'Special') : ' ')
   let modified = getbufvar(a:b, '&modified') ? s:red(' [+]', 'Exception') : ''
   let readonly = getbufvar(a:b, '&modifiable') ? '' : s:green(' [RO]', 'Constant')
   let extra = join(filter([modified, readonly], '!empty(v:val)'), '')
-  return s:strip(printf("[%s] %s\t%s\t%s", s:yellow(a:b, 'Number'), flag, name, extra))
+  let target = line == 0 ? name : name.':'.line
+  return s:strip(printf("%s\t[%s] %s\t%s\t%s", target, s:yellow(a:b, 'Number'), flag, name, extra))
 endfunction
 
 function! s:sort_buffers(...)
@@ -633,30 +646,30 @@ function! fzf#vim#buffers(...)
   return s:fzf('buffers', {
   \ 'source':  map(s:buflisted_sorted(), 's:format_buffer(v:val)'),
   \ 'sink*':   s:function('s:bufopen'),
-  \ 'options': ['+m', '-x', '--tiebreak=index', '--header-lines=1', '--ansi', '-d', '\t', '-n', '2,1..2', '--prompt', 'Buf> ', '--query', query]
+  \ 'options': ['+m', '-x', '--tiebreak=index', '--header-lines=1', '--ansi', '-d', '\t', '--with-nth', '2..', '-n', '2,1..2', '--prompt', 'Buf> ', '--query', query]
   \}, args)
 endfunction
 
 " ------------------------------------------------------------------
 " Ag / Rg
 " ------------------------------------------------------------------
-function! s:ag_to_qf(line, with_column)
-  let parts = split(a:line, ':')
-  let text = join(parts[(a:with_column ? 3 : 2):], ':')
+function! s:ag_to_qf(line, has_column)
+  let parts = split(a:line, '[^:]\zs:\ze[^:]')
+  let text = join(parts[(a:has_column ? 3 : 2):], ':')
   let dict = {'filename': &acd ? fnamemodify(parts[0], ':p') : parts[0], 'lnum': parts[1], 'text': text}
-  if a:with_column
+  if a:has_column
     let dict.col = parts[2]
   endif
   return dict
 endfunction
 
-function! s:ag_handler(lines, with_column)
+function! s:ag_handler(lines, has_column)
   if len(a:lines) < 2
     return
   endif
 
   let cmd = s:action_for(a:lines[0], 'e')
-  let list = map(filter(a:lines[1:], 'len(v:val)'), 's:ag_to_qf(v:val, a:with_column)')
+  let list = map(filter(a:lines[1:], 'len(v:val)'), 's:ag_to_qf(v:val, a:has_column)')
   if empty(list)
     return
   endif
@@ -665,7 +678,7 @@ function! s:ag_handler(lines, with_column)
   try
     call s:open(cmd, first.filename)
     execute first.lnum
-    if a:with_column
+    if a:has_column
       execute 'normal!' first.col.'|'
     endif
     normal! zz
@@ -695,8 +708,8 @@ function! fzf#vim#ag_raw(command_suffix, ...)
   return call('fzf#vim#grep', extend(['ag --nogroup --column --color '.a:command_suffix, 1], a:000))
 endfunction
 
-" command, with_column, [options]
-function! fzf#vim#grep(grep_command, with_column, ...)
+" command (string), has_column (0/1), [options (dict)], [fullscreen (0/1)]
+function! fzf#vim#grep(grep_command, has_column, ...)
   let words = []
   for word in split(a:grep_command)
     if word !~# '^[a-z]'
@@ -708,8 +721,7 @@ function! fzf#vim#grep(grep_command, with_column, ...)
   let name    = join(words, '-')
   let capname = join(map(words, 'toupper(v:val[0]).v:val[1:]'), '')
   let opts = {
-  \ 'source':  a:grep_command,
-  \ 'column':  a:with_column,
+  \ 'column':  a:has_column,
   \ 'options': ['--ansi', '--prompt', capname.'> ',
   \             '--multi', '--bind', 'alt-a:select-all,alt-d:deselect-all',
   \             '--color', 'hl:4,hl+:12']
@@ -718,7 +730,13 @@ function! fzf#vim#grep(grep_command, with_column, ...)
     return s:ag_handler(a:lines, self.column)
   endfunction
   let opts['sink*'] = remove(opts, 'sink')
-  return s:fzf(name, opts, a:000)
+  try
+    let prev_default_command = $FZF_DEFAULT_COMMAND
+    let $FZF_DEFAULT_COMMAND = a:grep_command
+    return s:fzf(name, opts, a:000)
+  finally
+    let $FZF_DEFAULT_COMMAND = prev_default_command
+  endtry
 endfunction
 
 " ------------------------------------------------------------------
@@ -777,7 +795,7 @@ function! fzf#vim#buffer_tags(query, ...)
     return s:fzf('btags', {
     \ 'source':  s:btags_source(tag_cmds),
     \ 'sink*':   s:function('s:btags_sink'),
-    \ 'options': ['--layout=reverse-list', '-m', '-d', '\t', '--with-nth', '1,4..', '-n', '1', '--prompt', 'BTags> ', '--query', a:query]}, args)
+    \ 'options': s:reverse_list(['-m', '-d', '\t', '--with-nth', '1,4..', '-n', '1', '--prompt', 'BTags> ', '--query', a:query])}, args)
   catch
     return s:warn(v:exception)
   endtry
@@ -803,7 +821,7 @@ function! s:tags_sink(lines)
         let relpath = parts[1][:-2]
         let abspath = relpath =~ (s:is_win ? '^[A-Z]:\' : '^/') ? relpath : join([base, relpath], '/')
         call s:open(cmd, expand(abspath, 1))
-        execute excmd
+        silent execute excmd
         call add(qfl, {'filename': expand('%'), 'lnum': line('.'), 'text': getline('.')})
       catch /^Vim:Interrupt$/
         break
@@ -1122,10 +1140,10 @@ function! s:commits(buffer_local, args)
   let options = {
   \ 'source':  source,
   \ 'sink*':   s:function('s:commits_sink'),
-  \ 'options': ['--ansi', '--multi', '--tiebreak=index', '--layout=reverse-list',
+  \ 'options': s:reverse_list(['--ansi', '--multi', '--tiebreak=index',
   \   '--inline-info', '--prompt', command.'> ', '--bind=ctrl-s:toggle-sort',
   \   '--header', ':: Press '.s:magenta('CTRL-S', 'Special').' to toggle sort, '.s:magenta('CTRL-Y', 'Special').' to yank commit hashes',
-  \   '--expect=ctrl-y,'.expect_keys]
+  \   '--expect=ctrl-y,'.expect_keys])
   \ }
 
   if a:buffer_local

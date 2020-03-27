@@ -16,7 +16,7 @@ if ! declare -f _fzf_compgen_path > /dev/null; then
   _fzf_compgen_path() {
     echo "$1"
     command find -L "$1" \
-      -name .git -prune -o -name .svn -prune -o \( -type d -o -type f -o -type l \) \
+      -name .git -prune -o -name .hg -prune -o -name .svn -prune -o \( -type d -o -type f -o -type l \) \
       -a -not -path "$1" -print 2> /dev/null | sed 's@^\./@@'
   }
 fi
@@ -24,27 +24,47 @@ fi
 if ! declare -f _fzf_compgen_dir > /dev/null; then
   _fzf_compgen_dir() {
     command find -L "$1" \
-      -name .git -prune -o -name .svn -prune -o -type d \
+      -name .git -prune -o -name .hg -prune -o -name .svn -prune -o -type d \
       -a -not -path "$1" -print 2> /dev/null | sed 's@^\./@@'
   }
 fi
 
 ###########################################################
 
-__fzfcmd_complete() {
-  [ -n "$TMUX_PANE" ] && [ "${FZF_TMUX:-0}" != 0 ] && [ ${LINES:-40} -gt 15 ] &&
-    echo "fzf-tmux -d${FZF_TMUX_HEIGHT:-40%}" || echo "fzf"
+__fzf_comprun() {
+  if [[ "$(type _fzf_comprun 2>&1)" =~ function ]]; then
+    _fzf_comprun "$@"
+  elif [ -n "$TMUX_PANE" ] && [ "${FZF_TMUX:-0}" != 0 ] && [ ${LINES:-40} -gt 15 ]; then
+    shift
+    fzf-tmux -d "${FZF_TMUX_HEIGHT:-40%}" "$@"
+  else
+    shift
+    fzf "$@"
+  fi
+}
+
+# Extract the name of the command. e.g. foo=1 bar baz**<tab>
+__fzf_extract_command() {
+  local token tokens
+  tokens=(${(z)1})
+  for token in $tokens; do
+    if [[ "$token" =~ [[:alnum:]] && ! "$token" =~ "=" ]]; then
+      echo "$token"
+      return
+    fi
+  done
+  echo "${tokens[1]}"
 }
 
 __fzf_generic_path_completion() {
-  local base lbuf compgen fzf_opts suffix tail fzf dir leftover matches
+  local base lbuf cmd compgen fzf_opts suffix tail dir leftover matches
   base=$1
   lbuf=$2
+  cmd=$(__fzf_extract_command "$lbuf")
   compgen=$3
   fzf_opts=$4
   suffix=$5
   tail=$6
-  fzf="$(__fzfcmd_complete)"
 
   setopt localoptions nonomatch
   eval "base=$base"
@@ -55,7 +75,7 @@ __fzf_generic_path_completion() {
       leftover=${leftover/#\/}
       [ -z "$dir" ] && dir='.'
       [ "$dir" != "/" ] && dir="${dir/%\//}"
-      matches=$(eval "$compgen $(printf %q "$dir")" | FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse $FZF_DEFAULT_OPTS $FZF_COMPLETION_OPTS" ${=fzf} ${=fzf_opts} -q "$leftover" | while read item; do
+      matches=$(eval "$compgen $(printf %q "$dir")" | FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse $FZF_DEFAULT_OPTS $FZF_COMPLETION_OPTS" __fzf_comprun "$cmd" ${(Q)${(Z+n+)fzf_opts}} -q "$leftover" | while read item; do
         echo -n "${(q)item}$suffix "
       done)
       matches=${matches% }
@@ -87,17 +107,37 @@ _fzf_feed_fifo() (
 )
 
 _fzf_complete() {
-  local fifo fzf_opts lbuf fzf matches post
+  setopt localoptions ksh_arrays
+  # Split arguments around --
+  local args rest str_arg i sep
+  args=("$@")
+  sep=
+  for i in {0..${#args[@]}}; do
+    if [[ "${args[$i]}" = -- ]]; then
+      sep=$i
+      break
+    fi
+  done
+  if [[ -n "$sep" ]]; then
+    str_arg=
+    rest=("${args[@]:$((sep + 1)):${#args[@]}}")
+    args=("${args[@]:0:$sep}")
+  else
+    str_arg=$1
+    args=()
+    shift
+    rest=("$@")
+  fi
+
+  local fifo lbuf cmd matches post
   fifo="${TMPDIR:-/tmp}/fzf-complete-fifo-$$"
-  fzf_opts=$1
-  lbuf=$2
-  post="${funcstack[2]}_post"
+  lbuf=${rest[0]}
+  cmd=$(__fzf_extract_command "$lbuf")
+  post="${funcstack[1]}_post"
   type $post > /dev/null 2>&1 || post=cat
 
-  fzf="$(__fzfcmd_complete)"
-
   _fzf_feed_fifo "$fifo"
-  matches=$(cat "$fifo" | FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse $FZF_DEFAULT_OPTS $FZF_COMPLETION_OPTS" ${=fzf} ${=fzf_opts} -q "${(Q)prefix}" | $post | tr '\n' ' ')
+  matches=$(FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse $FZF_DEFAULT_OPTS $FZF_COMPLETION_OPTS $str_arg" __fzf_comprun "$cmd" "${args[@]}" -q "${(Q)prefix}" < "$fifo" | $post | tr '\n' ' ')
   if [ -n "$matches" ]; then
     LBUFFER="$lbuf$matches"
   fi
@@ -106,16 +146,16 @@ _fzf_complete() {
 }
 
 _fzf_complete_telnet() {
-  _fzf_complete '+m' "$@" < <(
+  _fzf_complete +m -- "$@" < <(
     command grep -v '^\s*\(#\|$\)' /etc/hosts | command grep -Fv '0.0.0.0' |
         awk '{if (length($2) > 0) {print $2}}' | sort -u
   )
 }
 
 _fzf_complete_ssh() {
-  _fzf_complete '+m' "$@" < <(
+  _fzf_complete +m -- "$@" < <(
     setopt localoptions nonomatch
-    command cat <(cat ~/.ssh/config ~/.ssh/config.d/* /etc/ssh/ssh_config 2> /dev/null | command grep -i '^host ' | command grep -v '[*?]' | awk '{for (i = 2; i <= NF; i++) print $1 " " $i}') \
+    command cat <(cat ~/.ssh/config ~/.ssh/config.d/* /etc/ssh/ssh_config 2> /dev/null | command grep -i '^\s*host\(name\)\? ' | awk '{for (i = 2; i <= NF; i++) print $1 " " $i}' | command grep -v '[*?]') \
         <(command grep -oE '^[[a-z0-9.,:-]+' ~/.ssh/known_hosts | tr ',' '\n' | tr -d '[' | awk '{ print $1 " " $1 }') \
         <(command grep -v '^\s*\(#\|$\)' /etc/hosts | command grep -Fv '0.0.0.0') |
         awk '{if (length($2) > 0) {print $2}}' | sort -u
@@ -123,25 +163,25 @@ _fzf_complete_ssh() {
 }
 
 _fzf_complete_export() {
-  _fzf_complete '-m' "$@" < <(
+  _fzf_complete -m -- "$@" < <(
     declare -xp | sed 's/=.*//' | sed 's/.* //'
   )
 }
 
 _fzf_complete_unset() {
-  _fzf_complete '-m' "$@" < <(
+  _fzf_complete -m -- "$@" < <(
     declare -xp | sed 's/=.*//' | sed 's/.* //'
   )
 }
 
 _fzf_complete_unalias() {
-  _fzf_complete '+m' "$@" < <(
+  _fzf_complete +m -- "$@" < <(
     alias | sed 's/=.*//'
   )
 }
 
 fzf-completion() {
-  local tokens cmd prefix trigger tail fzf matches lbuf d_cmds
+  local tokens cmd prefix trigger tail matches lbuf d_cmds
   setopt localoptions noshwordsplit noksh_arrays noposixbuiltins
 
   # http://zsh.sourceforge.net/FAQ/zshfaq03.html
@@ -152,17 +192,22 @@ fzf-completion() {
     return
   fi
 
-  cmd=${tokens[1]}
+  cmd=$(__fzf_extract_command "$LBUFFER")
 
   # Explicitly allow for empty trigger.
   trigger=${FZF_COMPLETION_TRIGGER-'**'}
   [ -z "$trigger" -a ${LBUFFER[-1]} = ' ' ] && tokens+=("")
 
+  # When the trigger starts with ';', it becomes a separate token
+  if [[ ${LBUFFER} = *"${tokens[-2]}${tokens[-1]}" ]]; then
+    tokens[-2]="${tokens[-2]}${tokens[-1]}"
+    tokens=(${tokens[0,-2]})
+  fi
+
   tail=${LBUFFER:$(( ${#LBUFFER} - ${#trigger} ))}
   # Kill completion (do not require trigger sequence)
   if [ $cmd = kill -a ${LBUFFER[-1]} = ' ' ]; then
-    fzf="$(__fzfcmd_complete)"
-    matches=$(command ps -ef | sed 1d | FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-50%} --min-height 15 --reverse $FZF_DEFAULT_OPTS --preview 'echo {}' --preview-window down:3:wrap $FZF_COMPLETION_OPTS" ${=fzf} -m | awk '{print $2}' | tr '\n' ' ')
+    matches=$(command ps -ef | sed 1d | FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-50%} --min-height 15 --reverse $FZF_DEFAULT_OPTS $FZF_COMPLETION_OPTS --preview 'echo {}' --preview-window down:3:wrap" __fzf_comprun "$cmd" -m | awk '{print $2}' | tr '\n' ' ')
     if [ -n "$matches" ]; then
       LBUFFER="$LBUFFER$matches"
     fi
@@ -175,7 +220,7 @@ fzf-completion() {
     [ -z "${tokens[-1]}" ] && lbuf=$LBUFFER        || lbuf=${LBUFFER:0:-${#tokens[-1]}}
 
     if eval "type _fzf_complete_${cmd} > /dev/null"; then
-      eval "prefix=\"$prefix\" _fzf_complete_${cmd} \"$lbuf\""
+      prefix="$prefix" eval _fzf_complete_${cmd} ${(q)lbuf}
     elif [ ${d_cmds[(i)$cmd]} -le ${#d_cmds} ]; then
       _fzf_dir_completion "$prefix" "$lbuf"
     else

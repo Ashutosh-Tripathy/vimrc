@@ -28,10 +28,12 @@
 " The current list of defaults by filetype is:
 "   * bzl (Bazel): buildifier
 "   * c, cpp, proto, javascript, typescript: clang-format
-"   * go: gofmt
-"   * python: autopep8, yapf
-"   * gn: gn
+"   * clojure: zprint
 "   * dart: dartfmt
+"   * fish: fish_indent
+"   * gn: gn
+"   * go: gofmt
+"   * python: autopep8, black, yapf
 
 
 let s:plugin = maktaba#plugin#Get('codefmt')

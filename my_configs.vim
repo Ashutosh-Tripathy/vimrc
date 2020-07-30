@@ -1,7 +1,7 @@
 """"""""""""""""""""""""""""""
 " => VIM related
 """"""""""""""""""""""""""""""
-set relativenumber
+"set relativenumber
 syntax enable
 let g:solarized_termcolors=256
 "colorscheme solarized
@@ -10,6 +10,7 @@ set fileformat=unix
 set fileformats=unix,dos
 set number
 map <leader>wo :only<cr>
+nmap <leader>bb <c-^><cr>
 map <leader>bo :w \| %bd \| e#<cr>
 map <leader>ca :colorscheme peaksea<cr>
 "nnoremap <c-a> ggVG
@@ -155,6 +156,7 @@ endif
 " => Nerd Tree
 """"""""""""""""""""""""""""""
 let g:NERDTreeChDirMode=2
+let g:NERDTreeWinSize = 60
 let g:NERDTreeWinPos = "left"
 "let NERDTreeQuitOnOpen=1
 autocmd FileType nerdtree setlocal relativenumber

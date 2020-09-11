@@ -131,7 +131,7 @@ nnoremap <Leader>b :CtrlPBuffer<cr>
 let g:ale_linters = {
 \   'javascript': ['eslint'],
 \   'typescript': ['tsserver', 'eslint', 'typecheck'],
-\   'python': ['flake8'],
+\   'python': ['pylint', 'flake8', 'mypy'],
 \   'go': ['go', 'golint', 'errcheck']
 \}
 let g:ale_javascript_prettier_eslint_use_global = 1
@@ -162,6 +162,7 @@ let g:NERDTreeWinPos = "left"
 autocmd FileType nerdtree setlocal relativenumber
 
 
+set tabpagemax=50
 
 
 "let g:ctrlp_custom_ignore = '\v[\/](node_modules|target|dist)|(\.(swp|ico|git|svn))$'
@@ -413,3 +414,6 @@ augroup autoformat_settings
 augroup END
 set nofoldenable
 
+" vim-peekaboo
+let g:peekaboo_window = "vert bo 50new"
+let g:peekaboo_delay = 500
